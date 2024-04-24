@@ -10,25 +10,24 @@ const jwtSecretKey = "mithun1234"
 
 
 const createUser = async (req, res) => {
-    const transporter = nodemailer.createTransport({
-        host: 'localhost',
-        port: 1025, // Maildev's SMTP port
-        ignoreTLS: true
-    });
+    // const transporter = nodemailer.createTransport({
+    //     host: 'localhost',
+    //     port: 1025, // Maildev's SMTP port
+    //     ignoreTLS: true
+    // });
 
-    const mailOptions = {
-        from: 'mithunmk4u4ever@gmail.com',
-        to: req.body.email,
-        subject: "User Registration Successful!",
-        text: "You have Successfully registered on Take Away Food Delivery Application. Thank you for choosing us."
-    };
+    // const mailOptions = {
+    //     from: 'mithunmk4u4ever@gmail.com',
+    //     to: req.body.email,
+    //     subject: "User Registration Successful!",
+    //     text: "You have Successfully registered on Take Away Food Delivery Application. Thank you for choosing us."
+    // };
 
     try {
         const user = await User.findOne({ email: req.body.email });
 
         if (user) {
-            return res.status(400).json({ msg: "User already exists" });
-        }
+            res.status(409).json({ error: "Email already exists." });        }
 
         let hashedPassword = await bcrypt.hash(req.body.password, 10);
 
@@ -39,15 +38,15 @@ const createUser = async (req, res) => {
             password: hashedPassword
         });
 
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                console.log(error);
-                return res.status(500).send('Error sending email');
-            } else {
-                console.log('Email sent: ' + info.response);
-                return res.status(200).send('Email sent successfully');
-            }
-        });
+        // transporter.sendMail(mailOptions, (error, info) => {
+        //     if (error) {
+        //         console.log(error);
+        //         return res.status(500).send('Error sending email');
+        //     } else {
+        //         console.log('Email sent: ' + info.response);
+        //         return res.status(200).send('Email sent successfully');
+        //     }
+        // });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ success: false, msg: "An error occurred" });
@@ -76,6 +75,15 @@ const loginUser = async (req, res) => {
         res.status(500).json({ success: false, message: 'An error occurred' })
     }
 };
+
+const getFoodData=(req,res)=>{
+    try {
+        res.send([global.fooditems,global.foodCategory])
+    } catch (error) {
+        console.error(error)
+        res.send("Server Error")
+    }
+}
 
 const addToCart = async (req, res) => {
     const { userId, foodItemId, name, price, qty, size, imgUrl, date } = req.body
@@ -164,10 +172,38 @@ const myOrderData = async (req, res) => {
     }
 };
 
+// const removeFromCart = async (req, res) => {
+//     try {
+//         const { itemsToRemove, email } = req.body;
+//         // console.log("remove", itemsToRemove, email);
+
+//         // Find the user by email
+//         const user = await User.findOne({ email });
+//         if (!user) {
+//             return res.status(404).json({ success: false, message: "User not found" });
+//         }
+
+//         // Remove items from the orders array based on indices
+//         user.cart = user.cart.filter((order, index) => {
+//             // Check if the index is included in itemsToRemove
+//             return !itemsToRemove.includes(index);
+//         });
+//         // console.log("orders", user.orders);
+
+//         // Save the updated user document
+//         await user.save();
+
+//         res.status(200).json({ success: true,user, message: "Items removed from cart successfully" });
+//     } catch (error) {
+//         console.error("Error removing items from cart:", error);
+//         res.status(500).json({ success: false, message: "Internal server error" });
+//     }
+// };
+
 const removeFromCart = async (req, res) => {
     try {
         const { itemsToRemove, email } = req.body;
-        // console.log("remove", itemsToRemove, email);
+        console.log("Removing items:", itemsToRemove, "for user:", email);
 
         // Find the user by email
         const user = await User.findOne({ email });
@@ -175,12 +211,11 @@ const removeFromCart = async (req, res) => {
             return res.status(404).json({ success: false, message: "User not found" });
         }
 
-        // Remove items from the orders array based on indices
-        user.orders = user.orders.filter((order, index) => {
-            // Check if the index is included in itemsToRemove
-            return !itemsToRemove.includes(index);
+        // Remove items from the cart array based on item IDs
+        user.cart = user.cart.filter(item => {
+            // Check if the item ID is not included in itemsToRemove
+            return !itemsToRemove.includes(item._id.toString());
         });
-        // console.log("orders", user.orders);
 
         // Save the updated user document
         await user.save();
@@ -192,32 +227,8 @@ const removeFromCart = async (req, res) => {
     }
 };
 
-// const removeFromCart = async (req, res) => {
-//     try {
-//         const { itemsToRemove, email } = req.body;
-//         console.log("remove", itemsToRemove, email);
 
-//         // Find the user by email
-//         const user = await User.findOne({ email });
-//         if (!user) {
-//             return res.status(404).json({ success: false, message: "User not found" });
-//         }
 
-//         // Remove items from the orders array based on order IDs
-//         user.orders = user.orders.filter(order => {
-//             // Check if the order ID is not included in itemsToRemove
-//             return !(itemsToRemove.includes(order._id.toString()));
-//         });
-
-//         // Save the updated user document
-//         await user.save();
-
-//         res.status(200).json({ success: true, message: "Items removed from cart successfully" });
-//     } catch (error) {
-//         console.error("Error removing items from cart:", error);
-//         res.status(500).json({ success: false, message: "Internal server error" });
-//     }
-// };
 
 
 const moveToMyOrder = async (req, res) => {
@@ -250,6 +261,7 @@ const moveToMyOrder = async (req, res) => {
 module.exports = {
     createUser,
     loginUser,
+    getFoodData,
     addToCart,
     getCartItems,
     orderData,

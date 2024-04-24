@@ -12,10 +12,12 @@ const Home = () => {
 
   const {items, setItems,category, setCategory,filtered,setFiltered}= useContext(myContext)
 
+  const token=localStorage.getItem("authToken")
   const loadData = async () => {
     const response = await fetch("http://localhost:3300/api/foodData", {
       method: "POST",
       headers: {
+        'Authorization': `Bearer ${token}`,
         "Content-Type": "application/json"
       }
     })

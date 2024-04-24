@@ -35,7 +35,8 @@ const userSchema = new mongoose.Schema({
     },
     orders: {
          type: Array,
-        required: false }, // Embed orders within the User schema
+        required: false
+     }, // Embed orders within the User schema
     date: {
         type: Date,
         default: Date.now

@@ -5,7 +5,7 @@ const userMiddleware = async (req, res, next) => {
     const authToken = req.headers.authorization;
 
     if (!authToken) {
-        return res.status(401).json({ success: false, message: 'Unauthorized' });
+        return res.status(401).json({ success: false, message: 'Unauthorized user' });
     }
 
     try {

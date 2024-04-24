@@ -104,48 +104,48 @@ function Cart() {
     };
 
 
-    // const handleRemoveAllSelected = async () => {
-    //     if (selectedItems.length > 0) {
-    //         try {
-    //             // Get the selected items from the data array
-    //             const itemsToRemove = data.filter((_, index) => selectedItems.includes(index));
+    const handleRemoveAllSelected = async () => {
+        if (selectedItems.length > 0) {
+            try {
+                // Get the selected items from the data array
+                const itemsToRemoveIds = selectedItems.map(item=>item);
+    
+                // Make a DELETE request to remove selected items from the cart
+               const response= await axios.post("http://localhost:3300/api/removefromcart", {
+                    data: { itemsToRemove: itemsToRemoveIds, email: userEmail }, // Send item IDs in the request body
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    }
+                })
+                    console.log("remove",response.data);
+    
+                // Update the local state after successful removal
+                // const updatedData = data.filter((_, index) => !selectedItems.includes(index));
+                // setData(updatedData);
+                // setTotalItems(updatedData.length);
+                // setTotalQuantity(updatedData.reduce((total, food) => total + food.qty, 0));
+                // setTotalItemPrice(updatedData.reduce((total, food) => total + food.price, 0));
+    
+                // setSelectedItems([]);
+                // setSelectAll(false);
+    
+            } catch (error) {
+                console.log(error);
+                alert('Error removing selected items.');
+            }
+        } else {
+            alert('Please select items to remove!');
+        }
+    };
+    
 
-    //             // Make a DELETE request to remove selected items from the cart
-    //             await axios.delete("http://localhost:3300/api/removefromcart", {
-    //                 data: { itemsToRemove, email: userEmail }, // Send data in the request body
-    //                 headers: {
-    //                     'Authorization': `Bearer ${token}`,
-    //                 }
-    //             });
+    const handleCOnfirmRemoveAllSelected = () => {
+        const isTrue = window.confirm("Are you sure you want to remove all the selected items?");
 
-    //             // Update the local state after successful removal
-    //             const updatedData = data.filter((_, index) => !(selectedItems.includes(index)));
-    //             setData(updatedData);
-    //             setTotalItems(updatedData.length); // Update total items
-    //             setTotalQuantity(updatedData.reduce((total, food) => total + food.qty, 0)); // Update total quantity
-    //             setTotalItemPrice(updatedData.reduce((total, food) => total + food.price, 0)); // Update total price
-
-                
-    //             setSelectedItems([]);
-    //             setSelectAll(false);
-    //             setData([])
-
-    //         } catch (error) {
-    //             console.log(error);
-    //             alert('Error removing selected items.');
-    //         }
-    //     } else {
-    //         alert('Please select items to remove!');
-    //     }
-    // };
-
-    // const handleCOnfirmRemoveAllSelected = () => {
-    //     const isTrue = window.confirm("Are you sure you want to remove all the selected items?");
-
-    //     if (isTrue) {
-    //         handleRemoveAllSelected();
-    //     }
-    // }
+        if (isTrue) {
+            handleRemoveAllSelected();
+        }
+    }
 
     // // ... (existing imports and component code)
 
@@ -245,9 +245,9 @@ function Cart() {
                             <th scope='col'>Amount</th>
                             <th scope='col'></th>
                             <th scope='col'>
-                                {/* <button className='btn btn-sm btn-outline-danger' onClick={handleCOnfirmRemoveAllSelected}>
+                                <button className='btn btn-sm btn-outline-danger' onClick={handleCOnfirmRemoveAllSelected}>
                                     Remove All Selected
-                                </button> */}
+                                </button>
                             </th>
                         </tr>
                     </thead>
@@ -280,9 +280,9 @@ function Cart() {
                             <td><b>Amount: ₹{totalItemPrice}</b></td>
                             <td></td>
                             <td>
-                                {/* <button className='btn btn-sm btn-outline-danger' onClick={handleRemoveAllSelected}>
+                                <button className='btn btn-sm btn-outline-danger' onClick={handleRemoveAllSelected}>
                                     Remove All Selected
-                                </button> */}
+                                </button> 
                             </td>
                         </tr>
                     </tfoot>

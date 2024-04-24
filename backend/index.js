@@ -29,7 +29,7 @@ app.get('/about', (req, res) => {
 })
 
 app.use('/api', userRouter)
-app.use('/api',require('./routes/displayData'))
+// app.use('/api',require('./routes/displayData'))
 app.use('/api/admin',adminRouter)
 
 
