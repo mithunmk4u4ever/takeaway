@@ -9,10 +9,12 @@ router.post("/foodData",userMiddleware, userController.getFoodData)
 router.post('/addtocart',userMiddleware, userController.addToCart);
 router.post('/getcartitems',userMiddleware, userController.getCartItems);
 
-router.post('/createorder',userMiddleware, userController.orderData)
+router.post('/removesinlgefromcart', userController.removeSingleFromCart);
+router.post('/removeselectedfromcart', userController.removeSelectedFromCart);
+
+
+router.post('/movetomyorder', userController.moveSelectedToMyOrder)
 router.post("/myorder",userMiddleware, userController.myOrderData)
-router.post('/removefromcart',userMiddleware, userController.removeFromCart);
-router.post('/movetomyorder', userController.moveToMyOrder)
 
 
 module.exports = router

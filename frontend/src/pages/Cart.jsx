@@ -12,7 +12,7 @@ function Cart() {
 
     // const [data, setData] = useState([])
     const { data, setData } = useContext(myContext)
-    const [selectedItems, setSelectedItems] = useState([]);
+    const [selectedItems, setSelectedItems] = useState(data.length ? data.map((_, index) => index) : []);
     const [selectAll, setSelectAll] = useState(false);
 
     const [totalItems, setTotalItems] = useState(0);
@@ -35,8 +35,8 @@ function Cart() {
     }, [token, userId, dispatch]);
 
     useEffect(() => {
-        // Set initial selected items based on items in the cart
-        setSelectedItems(data.map((_, index) => index));
+        // Set initial selected items based on items in the cart (if any)
+        setSelectedItems(data.length ? data.map((_, index) => index) : []);
     }, [data]);
 
     useEffect(() => {
@@ -58,7 +58,7 @@ function Cart() {
                     }
                 }
             );
-    
+
             if (response && response.status === 202) {
                 console.log("Cart items:", response.data.cartItems);
                 setData(response.data.cartItems);
@@ -69,7 +69,7 @@ function Cart() {
             console.log(error);
         }
     };
-    
+
 
 
     if (data.length === 0) {
@@ -86,58 +86,69 @@ function Cart() {
     // Add this function to your component
     const handleSelect = (index) => {
         const isSelected = selectedItems.includes(index);
+        let updatedSelectedItems;
         if (isSelected) {
-            setSelectedItems(selectedItems.filter((item) => item !== index));
+            updatedSelectedItems = selectedItems.filter((item) => item !== index); // Remove the index from selection
         } else {
-            setSelectedItems([...selectedItems, index]);
+            updatedSelectedItems = [...selectedItems, index]; // Add the index to selection
         }
+        setSelectedItems(updatedSelectedItems);
     };
 
     const handleSelectAll = () => {
+        const allIndices = data.map((_, index) => index);
+        setSelectedItems(selectAll ? [] : allIndices);
         setSelectAll(!selectAll);
-        if (!selectAll) {
-            const allIndices = data.map((_, index) => index);
-            setSelectedItems(allIndices);
-        } else {
-            setSelectedItems([]);
-        }
     };
+
 
 
     const handleRemoveAllSelected = async () => {
-        if (selectedItems.length > 0) {
-            try {
-                // Get the selected items from the data array
-                const itemsToRemoveIds = selectedItems.map(item=>item);
-    
-                // Make a DELETE request to remove selected items from the cart
-               const response= await axios.post("http://localhost:3300/api/removefromcart", {
-                    data: { itemsToRemove: itemsToRemoveIds, email: userEmail }, // Send item IDs in the request body
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
+
+    };
+
+    const handleRemoveSingle = async (index) => {
+        try {
+            if (index >= 0 && index < data.length) { // Check for valid index
+                const removedItem = data[index]; // Get the item to be removed
+                const response = await axios.post(
+                    "http://localhost:3300/api/removesinlgefromcart",
+                    {
+                        data: { item: removedItem, userEmail }, // Send the entire item object
                     }
-                })
-                    console.log("remove",response.data);
-    
-                // Update the local state after successful removal
-                // const updatedData = data.filter((_, index) => !selectedItems.includes(index));
-                // setData(updatedData);
-                // setTotalItems(updatedData.length);
-                // setTotalQuantity(updatedData.reduce((total, food) => total + food.qty, 0));
-                // setTotalItemPrice(updatedData.reduce((total, food) => total + food.price, 0));
-    
-                // setSelectedItems([]);
-                // setSelectAll(false);
-    
-            } catch (error) {
-                console.log(error);
-                alert('Error removing selected items.');
+                );
+                console.log("remove", response.data);
+
+                // Update local cart state (optional)
+                setData(data.filter((_, i) => i !== index)); // Filter out based on index
+            } else {
+                console.error("Invalid index for removal:", index);
             }
-        } else {
-            alert('Please select items to remove!');
+        } catch (error) {
+            console.error("Error removing item from cart:", error);
         }
     };
-    
+
+    const handleDeleteSelected = async () => {
+        try {
+            if (!selectedItems.length) {
+                return; // Handle no items selected case (optional)
+            }
+
+            const selectedItemsWithSize = selectedItems.map((index) => data[index]);
+
+            const response = await axios.post(
+                "http://localhost:3300/api/removeselectedfromcart",
+                { data: { items: selectedItemsWithSize, email: userEmail } } // Send selected items with size
+            );
+            console.log("remove", response.data);
+        } catch (error) {
+            console.error("Error removing items from cart:", error);
+        }
+    };
+
+
+
 
     const handleCOnfirmRemoveAllSelected = () => {
         const isTrue = window.confirm("Are you sure you want to remove all the selected items?");
@@ -147,155 +158,110 @@ function Cart() {
         }
     }
 
-    // // ... (existing imports and component code)
+    // ... (existing imports and component code)
+    const moveSelectedToMyOrder = async () => {
+        try {
+            if (!selectedItems.length) {
+                return; // No items selected
+            }
 
-    // const email = localStorage.getItem("userEmail");
+            const selectedItemsFromCart = selectedItems.map(index => data[index]);
 
-    // const handleCheckout = async () => {
-    //     if (token) {
-    //         const selectedData = selectedItems.map((index) => data[index]);
+            const response = await axios.post(
+                "http://localhost:3300/api/movetomyorder",
+                { items: selectedItemsFromCart, email: userEmail }
+            );
 
-    //         if (selectedData.length > 0) {
-    //             try {
-    //                 // Move selected items to myorder in the database
-    //                 const moveResponse = await axios.post(
-    //                     'http://localhost:3300/api/movetomyorder',
-    //                     {
-    //                         itemsToMove: selectedData,
-    //                         userId: userId,
-    //                         email: email
-    //                     },
-    //                     {
-    //                         headers: {
-    //                             Authorization: `Bearer ${token}`,
-    //                         },
-    //                     }
-    //                 );
+            console.log("move to myOrder", response.data);
 
-    //                 if (moveResponse.status === 200) {
-    //                     // Remove selected items from the cart
-    //                     const updatedData = data.filter((_, index) => !selectedItems.includes(index));
-    //                     setData(updatedData);
+            // Clear selectedItems after moving to myOrder
+            setSelectedItems([]);
+        } catch (error) {
+            console.error("Error moving selected items to myOrder:", error);
+        }
+    };
 
-    //                     // Update total items, total quantity, and total price
-    //                     const newTotalItems = updatedData.length;
-    //                     const newTotalQuantity = updatedData.reduce((total, food) => total + food.qty, 0);
-    //                     const newTotalPrice = updatedData.reduce((total, food) => total + food.price, 0);
+    // Assuming this function is called when the user clicks a button to move selected items to myOrder
 
-    //                     // Update state with new totals
-    //                     setTotalItems(newTotalItems);
-    //                     setTotalQuantity(newTotalQuantity);
-    //                     setTotalItemPrice(newTotalPrice);
 
-    //                     setSelectedItems([]);
-    //                     setSelectAll(false);
-    //                     setData([]);
-    //                     // Perform checkout with selected items
-    //                     let userEmail = localStorage.getItem('userEmail');
-    //                     let response = await axios.post('http://localhost:3300/api/createorder', {
-    //                         email: userEmail,
-    //                         order_data: selectedData,
-    //                         order_date: new Date().toDateString(),
-    //                     },
-    //                     {
-    //                         headers: {
-    //                             Authorization: `Bearer ${token}`,
-    //                         },
-    //                     });
+    const handleCheckout = async () => {
+        moveSelectedToMyOrder();
 
-    //                     console.log('order', response);
-
-    //                     if (response.status === 200) {
-    //                         // Clear selected items data
-    //                         setSelectedItems([]);
-
-    //                         // Optionally, you can redirect the user to the 'myorder' page
-    //                         // history.push('/myorder');
-    //                     }
-    //                 } else {
-    //                     console.log('Error moving items to myorder');
-    //                 }
-    //             } catch (error) {
-    //                 console.log('Error:', error);
-    //             }
-    //         } else {
-    //             alert('Please select items to checkout!');
-    //         }
-    //     } else {
-    //         alert('Please login to checkout!!');
-    //     }
-    // };
+    };
 
 
 
 
     return (
-        <div>
-            <div className='container m-auto mt-5 table-responsive table-responsive-sm table-responsive-md'>
-                <table className='table table-hover'>
-                    <thead>
-                        <tr>
-                            <th>
-                                <input type="checkbox" checked={selectAll} onChange={handleSelectAll} />
-                            </th>
-                            <th scope='col'>#</th>
-                            <th scope='col'>Name</th>
-                            <th scope='col'>Quantity</th>
-                            <th scope='col'>Option</th>
-                            <th scope='col'>Amount</th>
-                            <th scope='col'></th>
-                            <th scope='col'>
-                                <button className='btn btn-sm btn-outline-danger' onClick={handleCOnfirmRemoveAllSelected}>
-                                    Remove All Selected
-                                </button>
-                            </th>
-                        </tr>
-                    </thead>
-
-
-                    <tbody>
-                        {data.map((food) => (
-                            <tr key={food.id}> {/* Assuming 'id' is the unique identifier for each item */}
-                                <td><input type="checkbox" checked={selectedItems.includes(food.id)} onChange={() => handleSelect(food.id)} /></td>
-                                <td>{food.id}</td>
-                                <td>{food.name}</td>
-                                <td>{food.qty}</td>
-                                <td>{food.size}</td>
-                                <td>₹{food.price}</td>
-                                <td>{food.image}</td>
-                                <td><button className='btn btn-sm btn-outline-danger' onClick={() => { dispatch({ type: "REMOVE", id: food.id }) }}>Remove</button></td>
-                            </tr>
-                        ))}
-                    </tbody>
-
-
-                    <tfoot>
-                        <tr>
-                            <td colSpan="1"></td>
-                            <td><b>Total:</b></td>
-                            <td><b>Items: {totalItems}</b></td>
-                            <td><b>Qty: {totalQuantity}</b></td>
-                            <td colSpan="1"></td>
-
-                            <td><b>Amount: ₹{totalItemPrice}</b></td>
-                            <td></td>
-                            <td>
-                                <button className='btn btn-sm btn-outline-danger' onClick={handleRemoveAllSelected}>
-                                    Remove All Selected
-                                </button> 
-                            </td>
-                        </tr>
-                    </tfoot>
-
-
-                </table>
-                <div><h1 className='text-light'>Total Price : {totalPrice}</h1></div>
+        <>
+            {data.length > 0 ? (
                 <div>
-                    {/* <button className='btn btn-success' onClick={handleCheckout}>Checkout</button> */}
+                    <div className='container m-auto mt-5 table-responsive table-responsive-sm table-responsive-md'>
+                        <table className='table table-hover'>
+                            <thead>
+                                <tr>
+                                    <th>
+                                        <input type="checkbox" checked={selectAll} onChange={handleSelectAll} />
+                                    </th>
+                                    <th scope='col'>#</th>
+                                    <th scope='col'>Name</th>
+                                    <th scope='col'>Quantity</th>
+                                    <th scope='col'>Option</th>
+                                    <th scope='col'>Amount</th>
+                                    <th scope='col'></th>
+                                    <th scope='col'></th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {data.map((food, index) => (
+                                    <tr key={food._id}>
+                                        <td>
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedItems.includes(food._id)}
+                                                onChange={() => handleSelect(index)}
+                                            />
+                                        </td>
+                                        <td>{food._id}</td>
+                                        <td>{food.name}</td>
+                                        <td>{food.qty}</td>
+                                        <td>{food.size}</td>
+                                        <td>₹{food.price}</td>
+                                        <td>{food.image}</td>
+                                        <td><button className='btn btn-sm btn-outline-danger' onClick={() => handleRemoveSingle(index)}>Remove</button></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+
+                            <tfoot>
+                                <tr>
+                                    <td colSpan="1"></td>
+                                    <td><b>Total:</b></td>
+                                    <td><b>Items: {totalItems}</b></td>
+                                    <td><b>Qty: {totalQuantity}</b></td>
+                                    <td colSpan="1"></td>
+                                    <td><b>Amount: ₹{totalItemPrice}</b></td>
+                                    <td></td>
+                                    <td>
+                                        <button className="btn btn-danger" disabled={!selectedItems.length} onClick={handleDeleteSelected}>
+                                            Delete Selected ({selectedItems.length})
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                        <div><h1 className='text-light'>Total Price : {totalPrice}</h1></div>
+                        <button className="btn btn-success" onClick={handleCheckout} disabled={!selectedItems.length}>
+                            Checkout ({selectedItems.length})
+                        </button>
+                    </div>
                 </div>
-            </div>
-        </div>
-    )
+            ) : (
+                <h1>Your Cart is Empty!</h1>
+            )}
+        </>
+    );
 }
 
 export default Cart

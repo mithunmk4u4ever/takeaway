@@ -87,11 +87,11 @@ const getFoodData=(req,res)=>{
 
 const addToCart = async (req, res) => {
     const { userId, foodItemId, name, price, qty, size, imgUrl, date } = req.body
-    console.log('Request received:', req.body);
+    // console.log('Request received:', req.body);
 
     try {
        const user = await User.findOne({ _id: userId });
-        console.log("user", user);
+        // console.log("user", user);
 
         if (!user) {
             return res.status(404).json({ msg: "User not found" })
@@ -130,30 +130,96 @@ const getCartItems = async (req, res) => {
     }
 }
 
-
-const orderData = async (req, res) => {
+const removeSingleFromCart = async (req, res) => {
     try {
-        const { email, order_data, img } = req.body;
+      const { item,userEmail } = req.body.data; // Assuming 'item' object contains properties for identification
+      console.log("removing",item,userEmail);
+      const user = await User.findOne({ email: userEmail }); // Find user by email
+  
+      if (!user) {
+        return res.status(404).json({ success: false, message: "User not found" });
+      }
+  
+      // Implement logic to filter the cart based on item properties (e.g., foodItemId, size, etc.)
+      const updatedCart = user.cart.filter(
+        (cartItem) =>
+          !(cartItem.foodItemId === item.foodItemId && cartItem.size === item.size && cartItem.qty===item.qty) // Assuming foodItemId and size for uniqueness
+      );
+  
+      user.cart = updatedCart;
+      await user.save(); // Save updated cart
+  
+      res.status(200).json({ success: true, message: "Item removed from cart successfully" });
+    } catch (error) {
+      console.error("Error removing item from cart:", error);
+      res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  };
+  
+  
 
-        // Find the user by email
+  const removeSelectedFromCart = async (req, res) => {
+    try {
+        const { items, email } = req.body.data;
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        if (!user.cart.length) {
+            return res.status(400).json({ success: false, message: "Cart is empty" });
+        }
+
+        const updatedCart = user.cart.filter(
+            (cartItem) => cartItem && // Check if cartItem is not undefined
+                !items.some(
+                    (selectedItem) =>
+                        selectedItem.name === cartItem.name && selectedItem.size === cartItem.size
+                )
+        );
+
+        user.cart = updatedCart;
+        await user.save(); // Save updated cart
+
+        res.status(200).json({ success: true, message: "Items removed from cart successfully" });
+    } catch (error) {
+        console.error("Error removing items from cart:", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
+
+const moveSelectedToMyOrder = async (req, res) => {
+    try {
+        const { items, email } = req.body;
+        if (!items || !items.length) {
+            return res.status(400).json({ success: false, message: "No items selected" });
+        }
+
+        // Retrieve user from the database
         const user = await User.findOne({ email });
 
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
 
-        // Push the new order data into the orders array
-        user.orders.push({ order_data, image: img });
+        // Add selected items to myOrder
+        user.orders.push(...items);
 
-        // Save the updated user document
+        // Remove selected items from the cart
+        user.cart = user.cart.filter(cartItem => !items.some(selectedItem => selectedItem._id === cartItem._id));
+
+        // Save the user object to the database
         await user.save();
 
-        res.status(200).json({ success: true, message: "Order placed successfully" });
+        return res.status(200).json({ success: true, message: "Selected items moved to myOrder successfully" });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: "Internal server error" });
+        console.error("Error moving selected items to myOrder:", error);
+        return res.status(500).json({ success: false, message: "Internal server error" });
     }
 };
+
+
 
 const myOrderData = async (req, res) => {
     try {
@@ -172,60 +238,6 @@ const myOrderData = async (req, res) => {
     }
 };
 
-// const removeFromCart = async (req, res) => {
-//     try {
-//         const { itemsToRemove, email } = req.body;
-//         // console.log("remove", itemsToRemove, email);
-
-//         // Find the user by email
-//         const user = await User.findOne({ email });
-//         if (!user) {
-//             return res.status(404).json({ success: false, message: "User not found" });
-//         }
-
-//         // Remove items from the orders array based on indices
-//         user.cart = user.cart.filter((order, index) => {
-//             // Check if the index is included in itemsToRemove
-//             return !itemsToRemove.includes(index);
-//         });
-//         // console.log("orders", user.orders);
-
-//         // Save the updated user document
-//         await user.save();
-
-//         res.status(200).json({ success: true,user, message: "Items removed from cart successfully" });
-//     } catch (error) {
-//         console.error("Error removing items from cart:", error);
-//         res.status(500).json({ success: false, message: "Internal server error" });
-//     }
-// };
-
-const removeFromCart = async (req, res) => {
-    try {
-        const { itemsToRemove, email } = req.body;
-        console.log("Removing items:", itemsToRemove, "for user:", email);
-
-        // Find the user by email
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(404).json({ success: false, message: "User not found" });
-        }
-
-        // Remove items from the cart array based on item IDs
-        user.cart = user.cart.filter(item => {
-            // Check if the item ID is not included in itemsToRemove
-            return !itemsToRemove.includes(item._id.toString());
-        });
-
-        // Save the updated user document
-        await user.save();
-
-        res.status(200).json({ success: true, message: "Items removed from cart successfully" });
-    } catch (error) {
-        console.error("Error removing items from cart:", error);
-        res.status(500).json({ success: false, message: "Internal server error" });
-    }
-};
 
 
 
@@ -264,8 +276,10 @@ module.exports = {
     getFoodData,
     addToCart,
     getCartItems,
-    orderData,
+    removeSingleFromCart,
+    removeSelectedFromCart,
+    moveSelectedToMyOrder,
     myOrderData,
-    removeFromCart,
+    
     moveToMyOrder
 }
