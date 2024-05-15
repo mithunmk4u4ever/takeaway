@@ -4,6 +4,9 @@ const nodemailer = require('nodemailer')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const jwtSecretKey = "mithun1234"
+const Razorpay = require("razorpay")
+const crypto = require("crypto")
+require("dotenv").config()
 
 
 
@@ -27,7 +30,8 @@ const createUser = async (req, res) => {
         const user = await User.findOne({ email: req.body.email });
 
         if (user) {
-            res.status(409).json({ error: "Email already exists." });        }
+            res.status(409).json({ error: "Email already exists." });
+        }
 
         let hashedPassword = await bcrypt.hash(req.body.password, 10);
 
@@ -62,7 +66,7 @@ const loginUser = async (req, res) => {
 
             if (comparePwd) {
                 const authToken = jwt.sign({ email: user.email }, jwtSecretKey, { expiresIn: '1d' })
-                res.json({ success: true, authToken,user, userId: user._id })
+                res.json({ success: true, authToken, user, userId: user._id })
                 console.log(authToken);
             } else {
                 res.status(400).json({ error: 'Incorrect password!', success: false })
@@ -76,9 +80,9 @@ const loginUser = async (req, res) => {
     }
 };
 
-const getFoodData=(req,res)=>{
+const getFoodData = (req, res) => {
     try {
-        res.send([global.fooditems,global.foodCategory])
+        res.send([global.fooditems, global.foodCategory])
     } catch (error) {
         console.error(error)
         res.send("Server Error")
@@ -90,7 +94,7 @@ const addToCart = async (req, res) => {
     // console.log('Request received:', req.body);
 
     try {
-       const user = await User.findOne({ _id: userId });
+        const user = await User.findOne({ _id: userId });
         // console.log("user", user);
 
         if (!user) {
@@ -132,33 +136,33 @@ const getCartItems = async (req, res) => {
 
 const removeSingleFromCart = async (req, res) => {
     try {
-      const { item,userEmail } = req.body.data; // Assuming 'item' object contains properties for identification
-      console.log("removing",item,userEmail);
-      const user = await User.findOne({ email: userEmail }); // Find user by email
-  
-      if (!user) {
-        return res.status(404).json({ success: false, message: "User not found" });
-      }
-  
-      // Implement logic to filter the cart based on item properties (e.g., foodItemId, size, etc.)
-      const updatedCart = user.cart.filter(
-        (cartItem) =>
-          !(cartItem.foodItemId === item.foodItemId && cartItem.size === item.size && cartItem.qty===item.qty) // Assuming foodItemId and size for uniqueness
-      );
-  
-      user.cart = updatedCart;
-      await user.save(); // Save updated cart
-  
-      res.status(200).json({ success: true, message: "Item removed from cart successfully" });
-    } catch (error) {
-      console.error("Error removing item from cart:", error);
-      res.status(500).json({ success: false, message: "Internal server error" });
-    }
-  };
-  
-  
+        const { item, userEmail } = req.body.data; // Assuming 'item' object contains properties for identification
+        console.log("removing", item, userEmail);
+        const user = await User.findOne({ email: userEmail }); // Find user by email
 
-  const removeSelectedFromCart = async (req, res) => {
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        // Implement logic to filter the cart based on item properties (e.g., foodItemId, size, etc.)
+        const updatedCart = user.cart.filter(
+            (cartItem) =>
+                !(cartItem.foodItemId === item.foodItemId && cartItem.size === item.size && cartItem.qty === item.qty) // Assuming foodItemId and size for uniqueness
+        );
+
+        user.cart = updatedCart;
+        await user.save(); // Save updated cart
+
+        res.status(200).json({ success: true, message: "Item removed from cart successfully" });
+    } catch (error) {
+        console.error("Error removing item from cart:", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
+
+
+const removeSelectedFromCart = async (req, res) => {
     try {
         const { items, email } = req.body.data;
         const user = await User.findOne({ email });
@@ -268,8 +272,85 @@ const moveToMyOrder = async (req, res) => {
     }
 };
 
+const makePayment = async (req, res) => {
+    try {
+        const razorpay = new Razorpay({
+            key_id: process.env.RAZORPAY_KEY_ID,
+            key_secret: process.env.RAZORPAY_SECRET_KEY
+        })
+
+        const options = req.body
+
+        console.log("pay", req.body);
+        const order = await razorpay.orders.create(options)
+
+        if (!order) {
+            return res.status(404).send("error")
+        }
+
+        res.json(order)
+    } catch (error) {
+        console.log(error);
+    }
+}
 
 
+// {
+//     "id": "order_OACutySLglJwzR",
+//     "entity": "order",
+//     "amount": 50000,
+//     "amount_paid": 0,
+//     "amount_due": 50000,
+//     "currency": "INR",
+//     "receipt": "receipt#1",
+//     "offer_id": null,
+//     "status": "created",
+//     "attempts": 0,
+//     "notes": [],
+//     "created_at": 1715653369
+//   }
+
+const validatePayment = async (req, res) => {
+    try {
+        const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body
+
+        const sha = crypto.createHmac('sha256', process.env.RAZORPAY_SECRET_KEY)
+
+        sha.update(`${razorpay_order_id}|${razorpay_payment_id}`)
+
+        const digest = sha.digest("hex")
+
+        if (digest !== razorpay_signature) {
+            return res.status(400).json({ message: "Transaction is legit" })
+        }
+
+        res.json({
+            message: "success",
+            orderId: razorpay_order_id,
+            paymentId: razorpay_payment_id
+        })
+    } catch (error) {
+
+    }
+}
+
+const addAddress = async (req, res) => {
+    try {
+        const { email, house, street, city, pin, phone } = req.body
+        const user = await User.findOne({ email })
+        if (!user) {
+            return res.status(404).json({ message: "User not found" })
+        }
+
+        user.address.push({ house, street, city, pin, phone })
+        await user.save()
+        const userAd = user.address
+        res.status(200).json({ message: "success", userAd })
+    } catch (error) {
+        console.log(error.message);
+    }
+
+}
 module.exports = {
     createUser,
     loginUser,
@@ -279,7 +360,9 @@ module.exports = {
     removeSingleFromCart,
     removeSelectedFromCart,
     moveSelectedToMyOrder,
+    makePayment,
+    validatePayment,
     myOrderData,
-    
+    addAddress,
     moveToMyOrder
 }

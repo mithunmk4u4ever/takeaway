@@ -34,13 +34,34 @@ const userSchema = new mongoose.Schema({
         required: false
     },
     orders: {
-         type: Array,
-        required: false
-     }, // Embed orders within the User schema
+        type: Array,
+        required: false,
+        default: Date.now
+    }, // Embed orders within the User schema
     date: {
         type: Date,
         default: Date.now
-    }
+    },
+    address: [
+        {
+            house: {
+                type: String
+            },
+            street: {
+                type: String
+            },
+            city: {
+                type: String
+            },
+            pin:{
+                type:Number
+            },
+            phone:{
+                type: Number
+            },
+            required: false,
+        }
+    ]
 });
 
 const User = mongoose.model('User', userSchema);

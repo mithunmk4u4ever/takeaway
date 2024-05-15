@@ -12,6 +12,7 @@ import Rough from './components/rough';
 import Cart from './pages/Cart';
 import Adminlogin from './components/Adminlogin';
 import Admindashboard from './components/Admindashboard';
+import Payment from './components/Payment';
 
 
 function App() {
@@ -36,6 +37,7 @@ function App() {
 
             <Route path='/admin/login' element={<Adminlogin/>} />
             <Route path='/admin/dashboard' element={<Admindashboard/>} />
+            {/* <Route path='/payment' element={<Payment/>} /> */}
 
           </Routes>
         </div>

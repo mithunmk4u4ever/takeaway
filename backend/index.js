@@ -1,6 +1,6 @@
 const express = require('express')
 const app = express()
-// require("dotenv").config()
+require("dotenv").config()
 const cors=require('cors')
 const port = 3300
 const mongoDB = require('./db')

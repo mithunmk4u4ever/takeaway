@@ -12,6 +12,11 @@ router.post('/getcartitems',userMiddleware, userController.getCartItems);
 router.post('/removesinlgefromcart', userController.removeSingleFromCart);
 router.post('/removeselectedfromcart', userController.removeSelectedFromCart);
 
+router.post("/makepayment",userController.makePayment)
+router.post("/validatepayment",userController.validatePayment)
+
+router.post('/addaddress',userController.addAddress)
+
 
 router.post('/movetomyorder', userController.moveSelectedToMyOrder)
 router.post("/myorder",userMiddleware, userController.myOrderData)

@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Badge from 'react-bootstrap/Badge'
 import Model from '../modeljs'
@@ -11,6 +11,12 @@ const Navbar = () => {
   const authToken = localStorage.getItem('authToken');
 
   const { data, setData, loguser } = useContext(myContext)
+
+  const [cartlen,setCartlen]=useState(0)
+
+  useEffect(()=>{
+    setCartlen(data.length)
+  },[data])
   // const data=useCart()
 
   const [cartView, setCartView] = useState(false)
@@ -68,7 +74,7 @@ const Navbar = () => {
                 </div>
                 : <div>
                   <button className="btn bg-white text-success mx-1" onClick={updateCartView}>
-                    My Cart <Badge pill bg="danger">{data.length}</Badge>
+                    My Cart <Badge pill bg="danger">{cartlen}</Badge>
                   </button>
                   {
                     cartView ? <Model onClose={() => setCartView(false)}><Cart /></Model> : null
