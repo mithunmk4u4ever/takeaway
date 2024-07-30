@@ -1,30 +1,45 @@
 import { useState } from "react";
-import 'bootstrap/dist/css/bootstrap.min.css'
-import axios from 'axios'
-import { Link, useNavigate } from 'react-router-dom'
+import 'bootstrap/dist/css/bootstrap.min.css';
+import axios from 'axios';
+import { Link, useNavigate } from 'react-router-dom';
+import PopUp from "./PopUp";
 
 function Signup() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
+    const [showPopup, setShowPopup] = useState("");
+    const [popUpVisible, setPopupVisible] = useState(false);
     const navigate = useNavigate();
 
     const handleSubmit = (e) => {
         e.preventDefault();
         setLoading(true);
         axios.post('http://localhost:3300/api/createuser', { name, email, password })
-        .then(res => {
-            console.log(res.data);
-            alert(`${name} has been registered successfully!! You will be redirected to Login Page`);
-            navigate('/login');
-        })
-        .catch(err => {
-            console.log(err);
-            alert("Error: Failed to register user. Please try again.");
-        })
-        .finally(() => setLoading(false));
+            .then(res => {
+                console.log(res.data);
+                setPopupVisible(true);
+                setShowPopup(`${name} has been registered successfully!! You will be redirected to Login Page`);
+                setTimeout(() => {
+                    setPopupVisible(false);
+                    navigate('/login');
+                }, 3000); // Redirect after 3 seconds
+            })
+            .catch(err => {
+                console.log(err);
+                setShowPopup("Error: Failed to register user. Please try again.");
+                setPopupVisible(true);
+                setTimeout(() => {
+                    setPopupVisible(false);
+                }, 3000); // Hide popup after 3 seconds
+            })
+            .finally(() => setLoading(false));
     }
+
+    const closePopup = () => {
+        setPopupVisible(false);
+    };
 
     return (
         <div className="d-flex justify-content-center align-items-center bg-secondary vh-100">
@@ -80,8 +95,8 @@ function Signup() {
                 <Link to="/login" className="btn btn-default border w-100 bg-light rounded-0 text-decoration-none">
                     Login
                 </Link>
-
             </div>
+            {popUpVisible && <PopUp message={showPopup} onClose={closePopup} />}
         </div>
     );
 }

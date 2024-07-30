@@ -9,7 +9,7 @@ const adminRouter=require('./routes/adminRouter')
 
 mongoDB()
 
-app.use(cors({ credentials: true, origin: 'http://localhost:3000' }));
+app.use(cors({ credentials: true, origin: 'http://localhost:3000',methods:"GET,POST,PUT,PATCH,DELETE" }));
 
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', "http://localhost:3000")

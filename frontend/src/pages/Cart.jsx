@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
-import {useNavigate} from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { myContext, useCart, useDispatchCart } from '../components/ContextReducer'
 import axios from "axios"
 import VerificationModal from '../components/VerificationModal';
@@ -22,20 +22,20 @@ function Cart() {
     const [totalItems, setTotalItems] = useState(0);
     const [totalQuantity, setTotalQuantity] = useState(0);
     const [totalItemPrice, setTotalItemPrice] = useState(0);
-    const [totalprice,setTotalprice]=useState(0);
-    const [isModalOpen,setIsModalOpen] = useState(false); // for modal
-    const [viewPaymentOption,setViewPaymnetOption] = useState(false);
-    const [viewAddress,setViewAddress] = useState(false); // for modal [viewAddress]
+    const [totalprice, setTotalprice] = useState(0);
+    const [isModalOpen, setIsModalOpen] = useState(false); // for modal
+    const [viewPaymentOption, setViewPaymentOption] = useState(false);
+    const [viewAddress, setViewAddress] = useState(false); // for modal [viewAddress]
 
-   
 
-    const [addAddress,setAddAddress]=useState(false)
+
+    const [addAddress, setAddAddress] = useState(false)
 
 
     // let data = useCart();
     let dispatch = useDispatchCart();
 
-    const navigate=useNavigate()
+    const navigate = useNavigate()
 
     useEffect(() => {
         if (token && userId !== null && userId !== undefined) {
@@ -55,7 +55,7 @@ function Cart() {
         setTotalItems(data.length);
         setTotalQuantity(data.reduce((total, food) => total + parseInt(food.qty), 0));
         setTotalItemPrice(data.reduce((total, food) => total + food.price, 0));
-       setTotalprice(data.reduce((total, food) => total + food.price, 0))
+        setTotalprice(data.reduce((total, food) => total + food.price, 0))
 
     }, [data]);
 
@@ -67,7 +67,7 @@ function Cart() {
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`,
-                        'userId': userId
+                        // 'userId': userId
                     }
                 }
             );
@@ -198,7 +198,7 @@ function Cart() {
 
 
     const handleCheckout = async () => {
-        setViewPaymnetOption(true);
+        setViewPaymentOption(true);
         setViewAddress(true);
         setIsModalOpen(true);
         // After successfully moving items to myOrder, delete them from the cart
@@ -222,15 +222,15 @@ function Cart() {
 
     };
 
-const getUserAddress=async ()=>{
-    try {
-        const response=await axios.post("http://localhost:3300/api/movetomyorder",{
-            email:userEmail,
-        })
-    } catch (error) {
-        
+    const getUserAddress = async () => {
+        try {
+            const response = await axios.post("http://localhost:3300/api/movetomyorder", {
+                email: userEmail,
+            })
+        } catch (error) {
+
+        }
     }
-}
 
 
     const closeModal = () => {
@@ -260,7 +260,7 @@ const getUserAddress=async ()=>{
                                     <th scope='col'></th>
                                 </tr>
                             </thead>
-    
+
                             <tbody>
                                 {data.map((food, index) => (
                                     <tr key={food._id}>
@@ -281,7 +281,7 @@ const getUserAddress=async ()=>{
                                     </tr>
                                 ))}
                             </tbody>
-    
+
                             <tfoot>
                                 <tr>
                                     <td colSpan="1"></td>
@@ -299,22 +299,27 @@ const getUserAddress=async ()=>{
                                 </tr>
                             </tfoot>
                         </table>
-                        <div><h1 className='text-dark'>Total Price : ₹{totalprice}.00</h1></div>
+                        <div>
+
+                            <h1 className='text-dark'>Total Price : ₹{totalprice}.00</h1></div>
                         <button className="btn btn-success" onClick={handleCheckout} disabled={!selectedItems.length}>
-                            Proceed to Payment [ Items: {selectedItems.length} Nos. - ₹{totalprice}.00 ]
+                            Place Order [ Items: {selectedItems.length} Nos. - ₹{totalprice}.00 ]
                         </button>
                     </div>
-    
-                    {viewPaymentOption && <Payment totalprice={totalprice}/>}
-                    {viewAddress && <AddAddress/>}
-                    {isModalOpen && <VerificationModal onClose={closeModal} />}
+                    <div style={{ display: "flex", justifyContent: "space-around" }}>
+
+                        {viewAddress && <AddAddress />}
+                        {viewPaymentOption && <Payment totalprice={totalprice} />}
+                        {isModalOpen && <VerificationModal onClose={closeModal} />}
+                    </div>
+
                 </>
             ) : (
                 <h1>Your Cart is Empty!</h1>
             )}
         </>
     );
-    
+
 }
 
 export default Cart

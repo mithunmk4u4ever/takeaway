@@ -9,7 +9,8 @@ function Login() {
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-const {loguser,setLoguser}=useContext(myContext)
+  const [displayPopUp,setDisplayPopUp]=useState("")
+  const { loguser, setLoguser } = useContext(myContext)
   const navigate = useNavigate()
 
   axios.defaults.withCredentials = true;
@@ -19,23 +20,23 @@ const {loguser,setLoguser}=useContext(myContext)
       .then(res => {
         console.log("login: " + JSON.stringify(res.data))
         if (res.data.success) {
-          console.log("resdata",res.data);
+          console.log("resdata", res.data);
           localStorage.setItem("authToken", res.data.authToken)
           localStorage.setItem("userEmail", email)
           localStorage.setItem("userId", res.data.userId)
 
-          console.log("authToken",localStorage.getItem("authToken"))
-          console.log("res",res.data.user);
+          console.log("authToken", localStorage.getItem("authToken"))
+          console.log("res", res.data.user);
           setLoguser(res.data.user)
           navigate('/')
 
         }
-        if(!res.data.success){
+        if (!res.data.success) {
           alert("Enter valid credentials...!")
         }
       }).catch(err => console.log(err))
   }
-console.log("loguser",loguser);
+  console.log("loguser", loguser);
   return (
     <div className="d-flex justify-content-center align-items-center bg-secondary vh-100">
       <div className="bg-white p-3 rounded w-25">
@@ -77,6 +78,7 @@ console.log("loguser",loguser);
         </form>
 
         <p>Not Registered..? Please<Link to='/signup' style={{ textDecoration: "none", fontWeight: "bold", color: "black" }}> Sign Up</Link></p>
+        <p>Forgot Password? <Link to='/forgotpassword' style={{ textDecoration: "none", fontWeight: "bold", color: "black" }}> Click here...</Link></p>
 
         <Link to="/signup" className="btn btn-default border w-100 bg-light rounded-0 text-decoration-none">
           Sign Up

@@ -1,16 +1,18 @@
 import { useState } from 'react'
 import axios from 'axios'
-
+import img from "../Images/fooddelivery.png"
 function Payment(props) {
   const {totalprice} = props
   const [payable, setPayable] = useState(totalprice)
 
+  const userId=localStorage.getItem('userId')
 
+const valueText=`Proceed to payment of ₹${payable} through Payment Gateway->`
   // const amountPayable=parseInt(payable)*100
   console.log("amountPayable",payable);
   const makePayment = async (e) => {
     const jsonPayload = JSON.stringify({
-      amount: payable,
+      amount: payable*100,
       currency: 'INR',
       receipt: 'receipt#1'
     });
@@ -32,14 +34,15 @@ function Payment(props) {
         "currency": "INR",
         "name": "TAKE AWAY", //your business name
         "description": "items will be delivered soon!",
-        "image": "https://cdn.dribbble.com/users/1751799/screenshots/5512482/check02.gif",
+        // "image": "https://cdn.dribbble.com/users/1751799/screenshots/5512482/check02.gif",
+        "image":img,
         "order_id": order.id, //This is a sample Order ID. Pass the `id` obtained in the response of Step 1
         "handler": async function (response){
             // alert(response.razorpay_payment_id);
             // alert(response.razorpay_order_id);
             // alert(response.razorpay_signature)
             const body={
-              ...response,
+              ...response,userId
             }
             const validate=await axios.post("http://localhost:3300/api/validatepayment",body)
             console.log(validate.data)
@@ -73,9 +76,11 @@ function Payment(props) {
     }
   }
     return (
-      <div>
-        <input type="text" value={payable} readonly />
-        <button onClick={makePayment}>Payment Gateway</button>
+      <div style={{display:"flex",justifyContent:"center",alignItems:"center",}}>
+        {/* <input type="text" style={{color:"white",backgroundColor:"black",width:"auto",height:"30px",border:"none",margin:"30px",borderRadius:"5px"}} value={valueText} readonly /> */}
+        <button style={{borderRadius:"5px"}} onClick={makePayment}>
+          {valueText}
+        </button>
       </div>
     )
   }

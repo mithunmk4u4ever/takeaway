@@ -13,6 +13,9 @@ import Cart from './pages/Cart';
 import Adminlogin from './components/Adminlogin';
 import Admindashboard from './components/Admindashboard';
 import Payment from './components/Payment';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
+import MockRegister from './components/MockRegister';
 
 
 function App() {
@@ -37,7 +40,10 @@ function App() {
 
             <Route path='/admin/login' element={<Adminlogin/>} />
             <Route path='/admin/dashboard' element={<Admindashboard/>} />
-            {/* <Route path='/payment' element={<Payment/>} /> */}
+            <Route path='/payment' element={<Payment/>} />
+            <Route path='/forgotpassword' element={<ForgotPassword/>} />
+            <Route path="/resetpassword/:id/:token" element={<ResetPassword />}/>
+            <Route path='/mock' element={<MockRegister/>}/>
 
           </Routes>
         </div>
